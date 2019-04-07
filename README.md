@@ -345,6 +345,67 @@ wget -N --no-check-certificate https://raw.githubusercontent.com/moranchenxi/mor
   # 插件和Caddy是集成在一起的(单个二进制文件)，多个插件必须同时安装。
 # 卸载命令：
 wget -N --no-check-certificate https://raw.githubusercontent.com/moranchenxi/moran/master/caddy_install.sh && chmod +x caddy_install.sh && caddy_install.sh uninstall
+利用caddy反代网站
+以下所有示例域名为toyoo.ml，请注意替换为自己的域名 ！
+
+1、服务器IP反向代理
+下面是一个，用你服务器的IP来反向代理一个http协议的网站http://www.baidu.com 。
+
+# 以下全部内容是一个整体，是一个命令，全部复制粘贴到SSH软件中并一起执行！
+echo ":80 {
+ gzip
+ proxy / http://www.baidu.com
+}" > /usr/local/caddy/Caddyfile
+服务器IP也可以反向代理HTTPS协议的网站，但是需要自签SSL证书，现在的浏览器一般都不会认自签的SSL证书，所以不建议这么做。
+
+2、域名反向代理HTTP
+下面是一个，用你的域名来反向代理一个http协议的网站http://www.baidu.com。
+
+# 以下全部内容是一个整体，是一个命令，全部复制粘贴到SSH软件中并一起执行！
+echo "http://toyoo.ml {
+ gzip
+ proxy / http://www.baidu.com
+}" > /usr/local/caddy/Caddyfile
+如果你需要反向代理HTTPS协议的网站，比如https://www.baidu.com，那么继续看下面步骤。
+
+3、域名反向代理HTTPS
+如果你有SSL证书和密匙的话，把SSL证书(xxx.crt)和密匙(xxx.key)文件放到/root文件夹下（也可以是其他文件夹，自己改下面代码），然后这样做：
+
+# 以下全部内容是一个整体，是一个命令，全部复制粘贴到SSH软件中并一起执行！
+echo "https://toyoo.ml {
+ gzip
+ tls /root/xxx.crt /root/xxx.key
+ proxy / https://www.baidu.com
+}" > /usr/local/caddy/Caddyfile
+如果你没有SSL证书和密匙，那么你可以这样做：
+
+下面的xxxx@xxx.xx改成你的邮箱，同时需要注意的是，申请SSL证书前，请务必提前解析好域名记录(解析后最好等一会，以全球生效)，否则Caddy会申请并配置失败！
+
+# 以下全部内容是一个整体，是一个命令，全部复制粘贴到SSH软件中并一起执行！
+echo "https://toyoo.ml {
+ gzip
+ tls xxxx@xxx.xx
+ proxy / https://www.baidu.com
+}" > /usr/local/caddy/Caddyfile
+如果一切正常，那么Caddy会自动帮你申请SSL证书并配置好，而且会定时续约SSL证书和强制http重定向至https！
+
+4、HTTP重定向为HTTPS
+当你是手动指定SSL证书和密匙 来配置的话，Caddy只会监听443端口(https)，并不会自动设置80端口(http)的重定向（如果是Caddy自动申请的SSL证书，那么就自动做好了），如果要做重定向的话，可以这样做：
+
+下面的示例代码中，是把http://toyoo.ml、http://233.toyoo.ml、https://666.toyoo.ml三个域名都重定向到了 https://toyoo.ml。
+
+# 以下全部内容是一个整体，是一个命令，全部复制粘贴到SSH软件中并一起执行！
+echo "http://toyoo.ml ,http://233.toyoo.ml ,https://666.toyoo.ml {
+ redir https://toyoo.ml{url}
+}
+https://toyoo.ml {
+ gzip
+ tls /root/xxx.crt /root/xxx.key
+ proxy / https://www.baidu.com
+}" > /usr/local/caddy/Caddyfile
+修改完Caddy的配置文件后，重启Caddy即可。
+
+/etc/init.d/caddy restart
 ```
 
 ---
